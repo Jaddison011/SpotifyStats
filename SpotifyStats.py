@@ -69,12 +69,14 @@ if __name__ == '__main__':
 
     # Get the top 10 played songs
     c.execute(
-        'SELECT SongName, Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY SongIDs.SongID ORDER BY `plays` DESC LIMIT 10')
+        'SELECT SongID, COUNT(*) as `plays` FROM StreamingHistory GROUP BY SongID ORDER BY `plays` DESC LIMIT 10')
     print(c.fetchall())
+    # [(5831, 297), (4609, 175), (5284, 171), (5441, 161), (5444, 149), (4537, 146), (5042, 141), (4817, 137),
+     # (4991, 132), (5573, 127)]
 
     # Get the top 10 played artists
-    c.execute('SELECT Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY Artist ORDER BY `plays` DESC LIMIT 10')
-    print(c.fetchall())
-
-    # c.execute('SELECT * FROM StreamingHistory')
+    # c.execute('SELECT Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY Artist ORDER BY `plays` DESC LIMIT 10')
     # print(c.fetchall())
+
+    c.execute('SELECT * FROM SongIDs')
+    print(c.fetchall())
