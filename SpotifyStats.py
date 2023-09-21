@@ -5,10 +5,11 @@ import numpy as np
 global c
 global conn
 
-# songs = dict()  # (id : times_played)
-# song_ids = dict()  # (artistName, trackName, album) : id
-# song_names = dict()  # id : (artistName, trackName, album)
-# played_songs = []  # (id, datePlayed, ms_played)
+# TODO: Make the output formatting better e.g. pretty printed
+# TODO: Make graph outputs to include time and a UI
+# TODO: e.g ranking of a song or artist over time
+# TODO: Make this work with multiple years files (which may have overlapping timestamps)
+# TODO: Make this work with both monthly and yearly files - need to reformat both JSON files into one standardised format
 
 
 def create_new_table():
@@ -23,41 +24,25 @@ def create_new_table():
     conn.commit()
 
 
-# def load_all_time_stats(*filenames):
-#     current_id = 0
-#     for filename in filenames:
-#         file = open(filename, encoding="utf8")
-#         file_json = json.loads(file.read())
-#         for song in file_json:
-#             if song["ms_played"] >= 50000:
-#                 if not song_ids.__contains__((song["master_metadata_album_artist_name"],
-#                                               song["master_metadata_track_name"],
-#                                               song["master_metadata_album_album_name"])):
-#                     # New song
-#                     song_ids[(song["master_metadata_album_artist_name"], song["master_metadata_track_name"],
-#                               song["master_metadata_album_album_name"])] = current_id
-#                     song_names[current_id] = (
-#                         song["master_metadata_album_artist_name"], song["master_metadata_track_name"],
-#                         song["master_metadata_album_album_name"])
-#                     played_songs.append((current_id, song["ts"], song["ms_played"]))
-#                     current_id += 1
-#                 else:
-#                     # Existing song
-#                     played_songs.append((current_id, song["ts"], song["ms_played"]))
+# TODO: unnecessary atm see below
+def get_current_max_id():
+    # c.execute('SELECT max(SongID) FROM SongIDs')
+    # rtrn_val = c.fetchall()[0]
+    # if rtrn_val:
+    #     return rtrn_val
+    return 1
 
 
 # TODO: Make this use a folder
 # TODO: Create a function to convert the all-time and monthly files to the same JSON format
+# TODO: populate these variables from the db but for now assume that every streaming_history is provided but should be extended to be so you can just add to the db instead of starting from scratch everytime
 def load_stats(*filenames):
     # Note: need to load from the db to populate these variables with already seen songs and song_ids
     known_songs = set()  # set (so O(1) access) of a tuple (song_name, artist_name). Note: ignoring album in order to count singles but can mess up for songs with the same name by the same artist e.g. The 1975 - The 1975
     song_ids_to_names = dict()  # id : (artist_name, song_name, album). Take the first seen album for a song.
     song_names_to_ids = dict()  # (artist_name, song_name) : id
-    current_max_id = 1  # 1 by default, assign to current highest in db
-
+    current_max_id = get_current_max_id()  # 1 by default, assign to current highest in db
     played_songs = []  # list of (id, timestamp). To be returned and added to the db
-
-    # TODO: populate these variables from the db
 
     for filename in filenames:
         file = open(filename, encoding="utf8")
@@ -98,17 +83,15 @@ if __name__ == '__main__':
     c = conn.cursor()
     create_new_table()
     # load_all_time_stats('endsong_0.json')
-    played_songs, song_dictionary = load_stats('endsong_0.json', 'endsong_1.json', 'endsong_2.json', 'endsong_3.json',
+    played_songs_out, song_dictionary = load_stats('endsong_0.json', 'endsong_1.json', 'endsong_2.json', 'endsong_3.json',
                'endsong_4.json', 'endsong_5.json', 'endsong_6.json', 'endsong_7.json', 'endsong_8.json')
 
-    save_to_db(played_songs, song_dictionary)
+    save_to_db(played_songs_out, song_dictionary)
 
     # Get the ids of the top 10 played songs
-    c.execute(
-        'SELECT SongID, COUNT(*) as `plays` FROM StreamingHistory GROUP BY SongID ORDER BY `plays` DESC LIMIT 10')
-    print(c.fetchall())
-    # [(5831, 297), (4609, 175), (5284, 171), (5441, 161), (5444, 149), (4537, 146), (5042, 141), (4817, 137),
-     # (4991, 132), (5573, 127)]
+    # c.execute(
+    #     'SELECT SongID, COUNT(*) as `plays` FROM StreamingHistory GROUP BY SongID ORDER BY `plays` DESC LIMIT 10')
+    # print(c.fetchall())
 
     # Get the top 10 played songs
     c.execute(
@@ -119,5 +102,10 @@ if __name__ == '__main__':
     c.execute('SELECT Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY Artist ORDER BY `plays` DESC LIMIT 10')
     print(c.fetchall())
 
-    # c.execute('SELECT * FROM SongIDs')
+    # Get the top 10 played albums
+    c.execute(
+        'SELECT AlbumName, Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY AlbumName ORDER BY `plays` DESC LIMIT 10')
     print(c.fetchall())
+
+    # c.execute('SELECT * FROM SongIDs DESC LIMIT 50')
+    # print(c.fetchall())
