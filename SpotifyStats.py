@@ -78,13 +78,26 @@ def save_to_db(played_songs_input, song_dictionary_input):
     conn.commit()
 
 
+def pretty_print_song_count(entry, position):
+    print(str(position) + " | Song: " + str(entry[0]) + " - " + str(entry[1])
+          + ", Times Played: " + str(entry[2]))
+
+
+def pretty_print_song_counts(song_list, limit):
+    print("----------------" + " Top " + str(limit) + " Songs " + "----------------")
+    position = 1
+    for entry in song_list[0:limit]:
+        pretty_print_song_count(entry, position)
+        position += 1
+
+
 if __name__ == '__main__':
     conn = sqlite3.connect('SpotifyStats.db')
     c = conn.cursor()
     create_new_table()
     # load_all_time_stats('endsong_0.json')
-    played_songs_out, song_dictionary = load_stats('endsong_0.json', 'endsong_1.json', 'endsong_2.json', 'endsong_3.json',
-               'endsong_4.json', 'endsong_5.json', 'endsong_6.json', 'endsong_7.json', 'endsong_8.json')
+    played_songs_out, song_dictionary = load_stats('Streaming_History_Audio_2019_0.json', 'Streaming_History_Audio_2019-2020_1.json', 'Streaming_History_Audio_2020-2021_3.json', 'Streaming_History_Audio_2020_2.json',
+               'Streaming_History_Audio_2021-2022_6.json', 'Streaming_History_Audio_2021_4.json', 'Streaming_History_Audio_2021_5.json', 'Streaming_History_Audio_2022-2023_8.json', 'Streaming_History_Audio_2022_7.json', 'Streaming_History_Audio_2023_9.json', 'Streaming_History_Audio_2023_10.json')
 
     save_to_db(played_songs_out, song_dictionary)
 
@@ -94,9 +107,17 @@ if __name__ == '__main__':
     # print(c.fetchall())
 
     # Get the top 10 played songs
+    limit = 100
     c.execute(
-        'SELECT SongName, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY SongIDs.SongID ORDER BY `plays` DESC LIMIT 10')
-    print(c.fetchall())
+        'SELECT SongName, Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY SongIDs.SongID ORDER BY `plays` DESC LIMIT ?', (limit,))
+    pretty_print_song_counts(c.fetchall(), limit)
+
+
+    c.execute(
+        'SELECT SongName, Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY SongIDs.SongID ORDER BY `plays` DESC LIMIT ?', (limit,))
+    output = c.fetchall()
+    print(output)
+    print(len(list(filter(lambda x: x[1] == "Chelsea Cutler", output))))
 
     # Get the top 10 played artists
     c.execute('SELECT Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY Artist ORDER BY `plays` DESC LIMIT 10')
@@ -104,7 +125,7 @@ if __name__ == '__main__':
 
     # Get the top 10 played albums
     c.execute(
-        'SELECT AlbumName, Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY AlbumName ORDER BY `plays` DESC LIMIT 10')
+        'SELECT AlbumName, Artist, COUNT(*) as `plays` FROM StreamingHistory JOIN SongIDs WHERE StreamingHistory.SongID == SongIDs.SongID GROUP BY AlbumName ORDER BY `plays` DESC LIMIT 50')
     print(c.fetchall())
 
     # c.execute('SELECT * FROM SongIDs DESC LIMIT 50')
